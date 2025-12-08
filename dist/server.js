@@ -14,12 +14,14 @@ app.use((0, cors_1.default)({
     origin: ["http://localhost:5173", "http://localhost:3030"],
 }));
 app.use((0, morgan_1.default)('dev'));
+const jobs_routes_1 = __importDefault(require("./routes/jobs.routes"));
 const upload_routes_1 = __importDefault(require("./routes/upload.routes"));
 const scrapeJob_routes_1 = __importDefault(require("./routes/scrapeJob.routes"));
+const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
+app.use('/jobs', jobs_routes_1.default);
 app.use('/upload', upload_routes_1.default);
 app.use('/job/scrapped/data', scrapeJob_routes_1.default);
-// app.use('/job-board/jobs', otherJobs);
-// const port = process.env.PORT || 5000;
+app.use('/job-board/scrape/jobs', ai_routes_1.default);
 const port = 8080;
 app.listen(port, () => {
     console.log(`Server is running on PORT: ${port} ✅`);

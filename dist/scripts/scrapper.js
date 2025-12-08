@@ -43,29 +43,7 @@ const scrapper = async (config, role, maxJobs = 5, platform) => {
         if (config.loadType === 'pagination') {
             await (0, action_utils_1.paginateUntil)(page, config, maxJobs);
         }
-        const jobs = await page.$$eval(config.selectors.container, (elements, { limit, selectors, platform }) => {
-            //   return elements.slice(0, limit).map((el) => ({
-            //     title: el.querySelector(selectors.title)?.textContent?.trim() || "",
-            //     description: el.querySelector(selectors.description)?.textContent?.trim() || "",
-            //     companyName: el.querySelector(selectors.companyName)?.textContent?.trim() || "",
-            //     location: el.querySelector(selectors.location)?.textContent?.trim() || "",
-            //     salary: el.querySelector(selectors.salary)?.textContent?.trim() || "",
-            //     allowedYears: "",
-            //     requiredExperience: el.querySelector(selectors.experience)?.textContent?.trim() || "",
-            //     skills: Array.from(el.querySelectorAll(selectors.skills)).map((s: any) => s.textContent?.trim() || ""),
-            //     jobUrl: el.querySelector(selectors.jobUrl)?.getAttribute("href") || "",
-            //     postPlatform: platform,
-            //     experienceLevel: "",
-            //     position: "",
-            //     postedAt: null,
-            //     createdAt: null,
-            //   }));
-            // },
-            // {
-            //   limit: maxJobs,
-            //   selectors: config.selectors,
-            //   platform: config.baseUrl,
-            // }
+        const jobs = await page.$$eval(config.selectors.container, (elements, { limit }) => {
             return elements.slice(0, limit).map(el => el.outerHTML);
         }, {
             limit: maxJobs,
