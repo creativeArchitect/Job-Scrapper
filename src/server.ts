@@ -16,13 +16,17 @@ app.use(
 
 app.use(morgan('dev'));
 
+import jobsRouter from "./routes/jobs.routes";
 import uploadRouter from "./routes/upload.routes";
 import scrappedJobs from "./routes/scrapeJob.routes";
 import aiScrapperRoutes from "./routes/ai.routes";
 
+app.use('/jobs', jobsRouter);
 app.use('/upload', uploadRouter);
 app.use('/job/scrapped/data', scrappedJobs);
 app.use('/job-board/scrape/jobs', aiScrapperRoutes);
+
+
 
 const port = 8080;
 app.listen(port, () => {

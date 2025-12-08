@@ -8,8 +8,14 @@ import randomDelay from "./rateLimit.utils";
 import { retry } from "./retry.utils";
 import { chunkData } from "./chunking.utils";
 import { aiFilteration } from "./aiFilter.utils";
-import { autoDeleteLinkedPosts, deleteExpiredJobs } from "../../ai.controller";
-import { deleteExpJobs, deleteLinkedinPosts } from "@/middlewares/deletionPosts.middleware";
+import {
+  autoDeleteLinkedPosts,
+  deleteExpiredJobs,
+} from "../controllers/ai.controller";
+import {
+  deleteExpJobs,
+  deleteLinkedinPosts,
+} from "@/middlewares/deletionPosts.middleware";
 
 let isRunning = false;
 

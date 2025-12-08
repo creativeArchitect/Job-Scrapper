@@ -6,7 +6,7 @@ export const deleteLinkedinPosts = async () => {
   try {
     const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
 
-    const deletePrevAllLinkedinPosts = await prisma.LinkedinJobPosts.deleteMany(
+    const deletePrevAllLinkedinPosts = await prisma.linkedinJobPosts.deleteMany(
       {
         where: {
           createdAt: { lt: fiveDaysAgo },
@@ -24,7 +24,7 @@ export const deleteLinkedinPosts = async () => {
 export const deleteExpJobs = async () => {
   try {
     const currTime = new Date().getTime();
-    const deletedJobs = await prisma.ScrappedJobs.deleteMany({
+    const deletedJobs = await prisma.scrappedJobs.deleteMany({
       where: {
         expiredAt: { lt: currTime },
       },
