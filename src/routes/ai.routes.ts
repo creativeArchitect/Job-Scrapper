@@ -1,8 +1,8 @@
-import { getScrappedJobs } from "../../ai.controller";
+import { getScrappedJobs } from "../controllers/ai.controller";
 import { Router } from "express";
 
 const aiScrapperRoutes = Router();
 
-aiScrapperRoutes.get('/', getScrappedJobs);
+aiScrapperRoutes.get("/", getScrappedJobs);
 
 export default aiScrapperRoutes;
