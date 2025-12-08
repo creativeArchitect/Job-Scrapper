@@ -39,6 +39,7 @@ Your job is to take an array of **chunked raw data of html, scraped job html** a
 - Return only the JSON array. No markdown, no explanation.
 - also if any field not having value then make it "" or according to its type.
 - if expiredAt is not given in the the data then mark isDeadlineGiven as false and also give current dateTime value in expiredAt or if present then marks isDeadlineGiven as true.
+- In the jobUrl add the whole url of the job so that i can directly goto that job by just searching on the google.
 Here is the data:
 
 ${JSON.stringify(cd)}
