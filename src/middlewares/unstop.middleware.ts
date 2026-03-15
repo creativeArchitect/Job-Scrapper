@@ -4,7 +4,7 @@ const unstopSrappedJobs = async (
   maxJobs: number,
   experience: string,
   role: string,
-  jobPostedDays: string,
+  jobPostedDays: number,
   jobType: string
 ) => {
   let page = 1;
@@ -54,10 +54,13 @@ const unstopSrappedJobs = async (
         ? job.jobDetail.locations.join(", ")
         : "Unknown";
 
+      // Strip HTML tags from description
+      const cleanDescription = (job.details || "No description").replace(/<[^>]*>?/gm, '');
+
       return {
         title: job.title,
         companyName: job.organisation?.name || "",
-        description: job.details || "No description",
+        description: cleanDescription,
 
         requiredSkills: Array.isArray(job.required_skills)
           ? job.required_skills.map((s: any) => s.skill_name)
@@ -88,7 +91,9 @@ const unstopSrappedJobs = async (
             : new Date(job.updated_at),
 
         isDeadlineGiven: job.end_date ? true : false,
-        expiredAt: job.end_date ? new Date(job.end_date) : null,
+        expiredAt: job.end_date ? new Date(job.end_date) : new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
     });
 
