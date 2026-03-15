@@ -20,6 +20,7 @@ import jobsRouter from "./routes/jobs.routes";
 import uploadRouter from "./routes/upload.routes";
 import scrappedJobs from "./routes/scrapeJob.routes";
 import aiScrapperRoutes from "./routes/ai.routes";
+import "@/utils/scheduler.utils";
 
 app.use('/jobs', jobsRouter);
 app.use('/upload', uploadRouter);

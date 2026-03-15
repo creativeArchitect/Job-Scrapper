@@ -8,18 +8,16 @@ import randomDelay from "./rateLimit.utils";
 import { retry } from "./retry.utils";
 import { chunkData } from "./chunking.utils";
 import { aiFilteration } from "./aiFilter.utils";
-import {
-  autoDeleteLinkedPosts,
-  deleteExpiredJobs,
-} from "../controllers/ai.controller";
+import { PrismaClient } from "@/generated/prisma";
 import {
   deleteExpJobs,
   deleteLinkedinPosts,
 } from "@/middlewares/deletionPosts.middleware";
 
+const prisma = new PrismaClient();
 let isRunning = false;
 
-cron.schedule("0 */6 * * *", async () => {
+cron.schedule("*/1 * * * *", async () => {
   if (isRunning) return console.log("⏳ Previous job still running...");
   isRunning = true;
 
@@ -59,11 +57,25 @@ cron.schedule("0 */6 * * *", async () => {
       if (naukriJobs.length > 0) {
         const chunks = chunkData(naukriJobs, 5);
         naukriJobs = await aiFilteration(chunks);
+        
+        if (naukriJobs.length > 0) {
+          await prisma.scrappedJobs.createMany({
+            data: naukriJobs,
+            skipDuplicates: true
+          });
+        }
       }
 
       if (internshalaJobs.length > 0) {
         const chunks = chunkData(internshalaJobs, 10);
         internshalaJobs = await aiFilteration(chunks);
+
+        if (internshalaJobs.length > 0) {
+          await prisma.scrappedJobs.createMany({
+            data: internshalaJobs,
+            skipDuplicates: true
+          });
+        }
       }
 
       // jobs from cuvette
@@ -76,26 +88,59 @@ cron.schedule("0 */6 * * *", async () => {
         3,
         1000
       );
-      const cuvetteJobs = cuvetteJobsResponse.data.data;
+      const cuvetteJobsRaw = cuvetteJobsResponse.data.data || [];
+      const now = new Date();
+      const mappedCuvetteJobs = cuvetteJobsRaw.map((job: any) => ({
+        title: job.title || "",
+        companyName: job.companyName || "",
+        description: job.description || "",
+        requiredSkills: job.skills || [],
+        allowedBatches: job.batches || [],
+        allowedBranches: job.branches || [],
+        salary: job.salary || "Not disclosed",
+        jobUrl: job.link || "",
+        location: job.location || "Remote",
+        requiredExperience: job.experience || "0 years",
+        postPlatform: "cuvette",
+        postedAt: job.postedAt ? new Date(job.postedAt) : now,
+        isDeadlineGiven: !!job.deadline,
+        expiredAt: job.deadline ? new Date(job.deadline) : now,
+        createdAt: now,
+        updatedAt: now,
+      }));
+
+      if (mappedCuvetteJobs.length > 0) {
+        await prisma.scrappedJobs.createMany({
+          data: mappedCuvetteJobs,
+          skipDuplicates: true
+        });
+      }
 
       // jobs from unstop
       await randomDelay();
       const unstopJobs = await retry(
-        () => unstopSrappedJobs(20, "fresher", role, 7, "Full Time"),
+        () => unstopSrappedJobs(10, "fresher", role, 1, "Full Time"),
         3,
         1000
       );
 
-      console.log(`✅ ${role}: Naukri ${naukriJobs.length} jobs`);
-      console.log(`✅ ${role}: Internshala ${internshalaJobs.length} jobs`);
-      console.log(`✅ ${role}: Cuvette ${cuvetteJobs.length} jobs`);
-      console.log(`✅ ${role}: Unstop ${unstopJobs.length} jobs`);
+      if (unstopJobs.length > 0) {
+        await prisma.scrappedJobs.createMany({
+          data: unstopJobs,
+          skipDuplicates: true
+        });
+      }
+
+      console.log(`✅ ${role}: Naukri ${naukriJobs.length} jobs saved`);
+      console.log(`✅ ${role}: Internshala ${internshalaJobs.length} jobs saved`);
+      console.log(`✅ ${role}: Cuvette ${mappedCuvetteJobs.length} jobs saved`);
+      console.log(`✅ ${role}: Unstop ${unstopJobs.length} jobs saved`);
     }
 
     console.log("🎉 Scraping completed for all roles!");
 
-    deleteExpJobs();
-    deleteLinkedinPosts();
+    await deleteExpJobs();
+    await deleteLinkedinPosts();
 
     console.log("Expired jobs are deleted successfully");
     console.log("linkedin posts are deleted successfully");

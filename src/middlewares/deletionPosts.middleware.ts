@@ -23,10 +23,10 @@ export const deleteLinkedinPosts = async () => {
 
 export const deleteExpJobs = async () => {
   try {
-    const currTime = new Date().getTime();
+    const now = new Date();
     const deletedJobs = await prisma.scrappedJobs.deleteMany({
       where: {
-        expiredAt: { lt: currTime },
+        expiredAt: { lt: now },
       },
     });
 
