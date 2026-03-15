@@ -3,6 +3,6 @@ import { Router } from "express";
 
 const aiScrapperRoutes = Router();
 
-aiScrapperRoutes.get("/", getScrappedJobs);
+aiScrapperRoutes.post("/", getScrappedJobs);
 
 export default aiScrapperRoutes;

@@ -8,34 +8,50 @@ puppeteer.use(StealthPlugin());
 
 const wait = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-
 const parseRelativeTime = (text: string): Date | null => {
   if (!text) return null;
-  const now = Date.now();
-  const t = text.toLowerCase();
 
-  if (/just now|a moment ago/.test(t)) return new Date(now);
+  const now = Date.now();
+  const t = text.toLowerCase().trim();
+
+  // just now
+  if (/just now|a moment ago|now/.test(t)) return new Date(now);
+
+  // seconds
+  let s = t.match(/(\d+)\s*(?:s|sec|secs|second|seconds)\b/);
+  if (s) return new Date(now - parseInt(s[1], 10) * 1000);
 
   // minutes
-  let m = t.match(/(\d+)\s*min(?:ute)?s?\b/);
-  if (!m) m = t.match(/(\d+)\s*m\b/);
+  let m = t.match(/(\d+)\s*(?:m|min|mins|minute|minutes)\b/);
   if (m) return new Date(now - parseInt(m[1], 10) * 60 * 1000);
 
   // hours
-  let h = t.match(/(\d+)\s*hour?s?\b/);
-  if (!h) h = t.match(/(\d+)\s*h\b/);
-  if (h) return new Date(now - parseInt(h[1], 10) * 60 * 60 * 1000);
+  let h = t.match(/(\d+)\s*(?:h|hr|hrs|hour|hours)\b/);
+  if (h) return new Date(now - parseInt(h[1], 10) * 3600 * 1000);
 
   // days
-  let d = t.match(/(\d+)\s*day?s?\b/);
-  if (!d) d = t.match(/(\d+)\s*d\b/);
-  if (d) return new Date(now - parseInt(d[1], 10) * 24 * 60 * 60 * 1000);
+  let d = t.match(/(\d+)\s*(?:d|day|days)\b/);
+  if (d) return new Date(now - parseInt(d[1], 10) * 86400 * 1000);
 
+  // weeks
+  let w = t.match(/(\d+)\s*(?:w|wk|wks|week|weeks)\b/);
+  if (w) return new Date(now - parseInt(w[1], 10) * 7 * 86400 * 1000);
+
+  // months (approx 30 days)
+  let mo = t.match(/(\d+)\s*(?:mo|mos|month|months)\b/);
+  if (mo) return new Date(now - parseInt(mo[1], 10) * 30 * 86400 * 1000);
+
+  // years (approx 365 days)
+  let y = t.match(/(\d+)\s*(?:y|yr|yrs|year|years)\b/);
+  if (y) return new Date(now - parseInt(y[1], 10) * 365 * 86400 * 1000);
+
+  // fallback: direct date
   const parsed = Date.parse(text);
   if (!Number.isNaN(parsed)) return new Date(parsed);
 
   return null;
 };
+
 
 export const linkedinScrapper = async (
   linkedinConfig: any,
@@ -68,7 +84,7 @@ export const linkedinScrapper = async (
 
     // control params
     const maxScrollAttempts = 20;
-    const scrollPause = 1400;
+    const scrollPause = 2000;
     let scrollAttempts = 0;
     let oldestLoadedPostTime: Date | null = null;
 
@@ -195,8 +211,9 @@ export const linkedinScrapper = async (
 
     const postsWithin24h = finalParsed.filter((p) => {
       if (!p.timestamp) return false;
-      return p.timestamp.getTime() >= cutoff.getTime();
-    }).map((p) => p.description);
+      return Date.now() - p.timestamp.getTime() <= 24 * 60 * 60 * 1000;
+    });
+    
 
     await browser.close();
     return postsWithin24h.slice(0, maxPosts); 

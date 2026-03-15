@@ -72,16 +72,38 @@ export const getScrappedJobs = async (
       });
     } else if (platform === "cuvette") {
       let page = 1;
-
       const roleParamFormat = role.replace(" ", "%20");
+      const now = new Date();
 
       while (Math.ceil(maxJobs / 10) >= page) {
-        const jobs: any[] = await axios.get(
+        const response: any = await axios.get(
           `https://api.cuvette.tech/api/v1/externaljobs?search=${roleParamFormat}&page=${page}`
         );
 
+        const jobs = response.data?.data || [];
+        if (jobs.length === 0) break;
+
+        const mappedJobs = jobs.map((job: any) => ({
+          title: job.title || "",
+          companyName: job.companyName || "",
+          description: job.description || "",
+          requiredSkills: job.skills || [],
+          allowedBatches: job.batches || [],
+          allowedBranches: job.branches || [],
+          salary: job.salary || "Not disclosed",
+          jobUrl: job.link || "",
+          location: job.location || "Remote",
+          requiredExperience: job.experience || "0 years",
+          postPlatform: "cuvette",
+          postedAt: job.postedAt ? new Date(job.postedAt) : now,
+          isDeadlineGiven: !!job.deadline,
+          expiredAt: job.deadline ? new Date(job.deadline) : now,
+          createdAt: now,
+          updatedAt: now,
+        }));
+
         await prisma.scrappedJobs.createMany({
-          data: jobs,
+          data: mappedJobs,
           skipDuplicates: true,
         });
 
@@ -171,28 +193,28 @@ export const getScrappedJobs = async (
         inputQuery
       );
 
-      const cleanPost = (text: string) => {
-        return text
-          .replace(/^Feed post/gi, "")
-          .replace(/Follow/gi, "")
-          .replace(/hashtag/gi, "")
-          .replace(/…more/gi, "")
-          .replace(/\d+\scomments?/gi, "")
-          .replace(/\d+\sreposts?/gi, "")
-          .replace(/\d+\slikes?/gi, "")
-          .replace(/^\s+|\s+$/g, "")
-          .replace(/\n{2,}/g, "\n")
-          .trim();
-      };
+      // const cleanPost = (text: string) => {
+      //   return text
+      //     .replace(/^Feed post/gi, "")
+      //     .replace(/Follow/gi, "")
+      //     .replace(/hashtag/gi, "")
+      //     .replace(/…more/gi, "")
+      //     .replace(/\d+\scomments?/gi, "")
+      //     .replace(/\d+\sreposts?/gi, "")
+      //     .replace(/\d+\slikes?/gi, "")
+      //     .replace(/^\s+|\s+$/g, "")
+      //     .replace(/\n{2,}/g, "\n")
+      //     .trim();
+      // };
 
-      const cleanedDetails = result.map((res) => cleanPost(res));
-      console.log("clean details of the job: ", cleanedDetails);
+      // const cleanedDetails = result.map((res) => cleanPost(res));
+      // console.log("clean details of the job: ", cleanedDetails);
 
-      const chunkedData = chunkData(cleanedDetails as any, maxJobs as number);
+      const chunkedData = chunkData(result as any, maxJobs as number);
 
       console.log("chunkedData: ", chunkedData);
 
-      const formattedPosts = (await linkedinPostFilter(chunkedData)) as any;
+      const formattedPosts = await linkedinPostFilter(chunkedData);
       console.log("formated posts: ", formattedPosts);
 
       const posts = await prisma.linkedinJobPosts.createMany({

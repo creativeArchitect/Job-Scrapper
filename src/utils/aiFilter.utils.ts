@@ -26,24 +26,21 @@ Your job is to take an array of **chunked raw data of html, scraped job html** a
   requiredExperience: string,
   postPlatform: string,
   isDeadlineGiven: boolean,
-  expiredAt: string (ISO 8601),
-  postedAt: string (ISO 8601 format),
-  createdAt: string (ISO 8601),
-  updatedAt: string (ISO 8601)
+  expiredAt: string (ISO 8601 or empty string if not found),
+  postedAt: string (ISO 8601 format or empty string if not found)
 }
 
 ### Rules:
 - Normalize \`requiredSkills\` to an array (e.g. split on commas).
 - Keep \`salary\` as a string (e.g. "₹5-8 LPA", "Not disclosed").
-- Ensure all date fields are ISO strings (e.g. "2025-10-20T00:00:00Z").
 - Return only the JSON array. No markdown, no explanation.
 - also if any field not having value then make it "" or according to its type.
-- if expiredAt is not given in the the data then mark isDeadlineGiven as false and also give current dateTime value in expiredAt or if present then marks isDeadlineGiven as true.
+- **IMPORTANT**: Extract \`postedAt\` and \`expiredAt\` ONLY if explicitly mentioned in the text. DO NOT GUESS OR GENERATE THESE DATES.
+- If \`expiredAt\` is not found, set \`isDeadlineGiven\` to false and \`expiredAt\` to "".
 - In the jobUrl add the whole url of the job so that i can directly goto that job by just searching on the google.
 Here is the data:
 
-${JSON.stringify(cd)}
-`;
+${JSON.stringify(cd)}`;
 
         try {
           const result = await genAI.models.generateContent({
@@ -62,7 +59,20 @@ ${JSON.stringify(cd)}
           }
 
           const parsed = JSON.parse(raw as string);
-          return parsed;
+          
+          // Post-process to ensure correct date formats and add metadata
+          const now = new Date().toISOString();
+          
+          if (Array.isArray(parsed)) {
+            return parsed.map(job => ({
+              ...job,
+              postedAt: job.postedAt && !isNaN(Date.parse(job.postedAt)) ? new Date(job.postedAt).toISOString() : now,
+              expiredAt: job.expiredAt && !isNaN(Date.parse(job.expiredAt)) ? new Date(job.expiredAt).toISOString() : now,
+              createdAt: now,
+              updatedAt: now
+            }));
+          }
+          return null;
         } catch (err) {
           console.error("❌ Error processing chunk:", err);
           return null;
